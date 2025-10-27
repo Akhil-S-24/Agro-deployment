@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rain Prediction - Agriculture System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+                        url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #333;
+        }
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20 px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(5 px);
+        }
+        .welcome {
+            font-size: 24 px;
+        }
+        .back-button {
+            background-color: #3498db;
+            color: white;
+            padding: 10 px 20 px;
+            border: none;
+            border-radius: 5 px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        .back-button:hover {
+            background-color: #2980b9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #34495e;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .button {
+            background-color: #27ae60;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+        .button:hover {
+            background-color: #219a52;
+        }
+        .result-section {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        .chart-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="header">
+        <div class="welcome">Rain Prediction</div>
+        <a href="/dashboard" class="back-button">Back to Dashboard</a>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Enter Location and Season Details</h2>
+            <form id="rainPredictionForm">
+                <div class="form-group">
+                    <label for="district">District:</label>
+                    <input type="text" id="district" required placeholder="Enter district name">
+                </div>
+                <div class="form-group">
+                    <label for="season">Season:</label>
+                    <select id="season" required>
+                        <option value="">Select Season</option>
+                        <option value="rainy">rainy (June-October)</option>
+                        <option value="winter">winter (October-March)</option>
+                        <option value="summer">summer (March-June)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="soilType">Soil Type:</label>
+                    <select id="soilType" required>
+                        <option value="">Select Soil Type</option>
+                        <option value="clay">Clay</option>
+                        <option value="sandy">Sandy</option>
+                        <option value="loamy">Loamy</option>
+                        <option value="black">Black</option>
+                        <option value="red">Red</option>
+                    </select>
+                </div>
+                <button type="submit" class="button">Get Rain Prediction</button>
+            </form>
+        </div>
+
+        <div id="rainPredictionResult" class="result-section" style="display: none;">
+            <h3>Prediction Results</h3>
+            <div id="resultContent"></div>
+            <div class="chart-container">
+                <canvas id="rainPredictionChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('rainPredictionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = {
+                district: document.getElementById('district').value,
+                season: document.getElementById('season').value,
+                soil_type: document.getElementById('soilType').value
+            };
+
+            try {
+                const response = await fetch('/api/predict-rain', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                const data = await response.json();
+                
+                const resultSection = document.getElementById('rainPredictionResult');
+                const resultContent = document.getElementById('resultContent');
+                
+                if (response.ok) {
+                    resultContent.innerHTML = `
+                        <div class="card">
+                            <h4>Rain Prediction Results</h4>
+                            <p><strong>Expected Rainfall:</strong> ${data.expected_rainfall} mm</p>
+                            <p><strong>Probability of Rain:</strong> ${(data.rain_probability * 100).toFixed(2)}%</p>
+                            <h5>Recommended Crops:</h5>
+                            <ul>
+                                ${data.recommended_crops.map(crop => `
+                                    <li>${crop.name} - ${crop.description}</li>
+                                `).join('')}
+                            </ul>
+                            <p><strong>Additional Tips:</strong> ${data.additional_tips}</p>
+                        </div>
+                    `;
+
+                    // Create pie chart for rain prediction
+                    const ctx = document.getElementById('rainPredictionChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: ['Expected Rainfall', 'Rain Probability'],
+                            datasets: [{
+                                data: [
+                                    data.expected_rainfall,
+                                    data.rain_probability * 100
+                                ],
+                                backgroundColor: [
+                                    '#36A2EB',
+                                    '#4BC0C0'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Rain Prediction Distribution'
+                                }
+                            }
+                        }
+                    });
+
+                    resultSection.style.display = 'block';
+                } else {
+                    resultContent.innerHTML = `<p class="error">${data.error || 'Failed to get rain prediction'}</p>`;
+                    resultSection.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                resultContent.innerHTML = '<p class="error">An error occurred while getting the rain prediction</p>';
+                resultSection.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html> 

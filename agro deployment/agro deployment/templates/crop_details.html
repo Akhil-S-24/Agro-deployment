@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crop Details - Agriculture System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+                        url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #333;
+        }
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .welcome {
+            font-size: 24px;
+        }
+        .back-button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        .back-button:hover {
+            background-color: #2980b9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #34495e;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .button {
+            background-color: #27ae60;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+        .button:hover {
+            background-color: #219a52;
+        }
+        .details-section {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .details-section h5 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #27ae60;
+            padding-bottom: 5px;
+        }
+        .details-section ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 5px 0;
+        }
+        .details-section li {
+            margin-bottom: 8px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 4px;
+        }
+        .details-section small {
+            color: #666;
+            display: block;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="welcome">Crop Details</div>
+        <a href="/dashboard" class="back-button">Back to Dashboard</a>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Search Crop Information</h2>
+            <form id="cropDetailsForm">
+                <div class="form-group">
+                    <label for="cropName">Enter Crop Name:</label>
+                    <input type="text" id="cropName" required placeholder="e.g., Rice, Wheat, Cotton">
+                </div>
+                <button type="submit" class="button">Get Crop Details</button>
+            </form>
+        </div>
+
+        <div id="cropDetailsResult" style="display: none;">
+            <div class="card">
+                <h3>Crop Information</h3>
+                <div id="resultContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('cropDetailsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const cropName = document.getElementById('cropName').value;
+
+            try {
+                const response = await fetch('/api/crop-details', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ crop_name: cropName })
+                });
+                const data = await response.json();
+                
+                const resultSection = document.getElementById('cropDetailsResult');
+                const resultContent = document.getElementById('resultContent');
+                
+                if (response.ok) {
+                    resultContent.innerHTML = `
+                        <div class="details-section">
+                            <h5>Growing Information</h5>
+                            <p><strong>Growing Season:</strong> ${data.growing_season}</p>
+                            <p><strong>Growing Duration:</strong> ${data.growing_duration}</p>
+                            <p><strong>Optimal Temperature:</strong> ${data.optimal_temperature}</p>
+                            <p><strong>Water Requirements:</strong> ${data.water_requirements}</p>
+                        </div>
+
+                        <div class="details-section">
+                            <h5>Fertilizer Recommendations</h5>
+                            <ul>
+                                ${data.fertilizer_recommendations.map(fertilizer => `
+                                    <li>
+                                        <strong>${fertilizer.name}:</strong> ${fertilizer.amount} per acre
+                                        <br>
+                                        <small>${fertilizer.description}</small>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+
+                        <div class="details-section">
+                            <h5>Growing Tips</h5>
+                            <ul>
+                                ${data.growing_tips.map(tip => `<li>${tip}</li>`).join('')}
+                            </ul>
+                        </div>
+
+                        <div class="details-section">
+                            <h5>Pest Control</h5>
+                            <ul>
+                                ${data.pest_control.map(pest => `
+                                    <li>
+                                        <strong>${pest.name}:</strong>
+                                        <br>
+                                        <small>${pest.description}</small>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+
+                        <div class="details-section">
+                            <h5>Market Information</h5>
+                            <p><strong>Average Market Price:</strong> ₹${data.market_price} per kg</p>
+                            <p><strong>Yield per Acre:</strong> ${data.yield_per_acre}</p>
+                        </div>
+                    `;
+                    resultSection.style.display = 'block';
+                } else {
+                    resultContent.innerHTML = `<p class="error">${data.error || 'Failed to get crop details'}</p>`;
+                    resultSection.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                resultContent.innerHTML = '<p class="error">An error occurred while getting crop details</p>';
+                resultSection.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html> 
