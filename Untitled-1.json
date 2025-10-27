@@ -1,0 +1,7 @@
+{
+    "text2code.showLogoutWelcomeView": false,
+    "text2code.showLoginWelcomeView": true,
+    "python.defaultInterpreterPath": "C:\\Program Files\\Python313\\python.exe",
+    "haselerdev.aiquickfix.apiKey": "@ext:haselerdev.aiquickfix",
+    "diffEditor.maxComputationTime": 0
+}
